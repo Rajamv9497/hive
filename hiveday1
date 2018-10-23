@@ -1,0 +1,691 @@
+A. create database
+------------------
+create database niit;
+
+--this creates a folder by the name of retail.db under /user/hive/warehouse
+
+A1. show all the databases in hive
+----------------------------------
+show databases;
+
+B. Select a database
+--------------------
+use niit;
+
+B1. Show tables under the database
+----------------------------------
+show tables;
+
+
+C1. Create transaction table
+-------------------------------
+create table txnrecords(txnno INT, txndate STRING, custno INT, amount DOUBLE, 
+category STRING, product STRING, city STRING, state STRING, spendby STRING)
+row format delimited
+fields terminated by ','
+stored as textfile;
+
+C2. Create customer table
+-------------------------------
+create table customer(custno INT, firstname STRING, lastname STRING, age INT, profession STRING)
+row format delimited
+fields terminated by ','
+stored as textfile;
+ 
+D1. Load the data into the table (from local file system)
+-----------------------------------------------------
+LOAD DATA LOCAL INPATH '/home/hduser/txns1.txt' OVERWRITE INTO TABLE txnrecords;
+LOAD DATA LOCAL INPATH '/home/hduser/custs' OVERWRITE INTO TABLE customer;
+
+D2. Load the data into the table (from hdfs system)
+-----------------------------------------------------
+LOAD DATA INPATH '/<hdfs path>/txns1.txt' OVERWRITE INTO TABLE txnrecords;
+LOAD DATA INPATH '/mindtree/custs' OVERWRITE INTO TABLE customer;
+"
+trunctate table customer;
+hadoop fs -put custs /niit
+LOAD DATA INPATH '/niit/custs' OVERWRITE INTO TABLE customer;
+
+D3. Load the data without header
+--------------------------------
+create table employee_header(empno INT, empname STRING, salary bigint)
+row format delimited
+fields terminated by ','
+stored as textfile
+tblproperties("skip.header.line.count"="1");
+
+load data local inpath '/home/hduser/hivedata_header' overwrite into table employee_header;
+
+ 
+E 1. Describing metadata or schema of the table
+---------------------------------------------
+describe txnrecords;
+describe txnrecords;
+OK
+txnno               	int                 	                    
+txndate             	string              	                    
+custno              	int                 	                    
+amount              	double              	                    
+category            	string              	                    
+product             	string              	                    
+city                	string              	                    
+state               	string              	                    
+spendby             	string              	                    
+Time taken: 1.316 seconds, Fetched: 9 row(s)
+
+
+E 2. Describing detailed metadata or schema of the table
+---------------------------------------------
+describe extended txnrecords;
+
+describe extended txnrecords;
+OK
+txnno               	int                 	                    
+txndate             	string              	                    
+custno              	int                 	                    
+amount              	double              	                    
+category            	string              	                    
+product             	string              	                    
+city                	string              	                    
+state               	string              	                    
+spendby             	string              	                    
+	 	 
+Detailed Table Information	Table(tableName:txnrecords, dbName:niit, owner:hduser, createTime:1536962458, lastAccessTime:0, retention:0, sd:StorageDescriptor(cols:[FieldSchema(name:txnno, type:int, comment:null), FieldSchema(name:txndate, type:string, comment:null), FieldSchema(name:custno, type:int, comment:null), FieldSchema(name:amount, type:double, comment:null), FieldSchema(name:category, type:string, comment:null), FieldSchema(name:product, type:string, comment:null), FieldSchema(name:city, type:string, comment:null), FieldSchema(name:state, type:string, comment:null), FieldSchema(name:spendby, type:string, comment:null)], location:hdfs://localhost:54310/user/hive/warehouse/niit.db/txnrecords, inputFormat:org.apache.hadoop.mapred.TextInputFormat, outputFormat:org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat, compressed:false, numBuckets:-1, serdeInfo:SerDeInfo(name:null, serializationLib:org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe, parameters:{field.delim=,, serialization.format=,}), bucketCols:[], sortCols:[], parameters:{}, skewedInfo:SkewedInfo(skewedColNames:[], skewedColValues:[], skewedColValueLocationMaps:{}), storedAsSubDirectories:false), partitionKeys:[], parameters:{totalSize=4418144, numRows=0, rawDataSize=0, COLUMN_STATS_ACCURATE=true, numFiles=1, transient_lastDdlTime=1536963305}, viewOriginalText:null, viewExpandedText:null, tableType:MANAGED_TABLE)	
+Time taken: 0.167 seconds, Fetched: 11 row(s)
+
+F. Counting no of records
+-------------------------
+select count(*) from txnrecords;
+
+OK
+50000
+
+
+G1. Count of each profession in the Customers List
+---------------------------------------------------
+select profession, count(*) as headcount from customer group by profession order by headcount;
+
+Nurse	191
+Electrical engineer	192
+Automotive mechanic	193
+Civil engineer	193
+Electrician	194
+Psychologist	194
+Agricultural and food scientist	195
+Farmer	196
+Statistician	196
+Athlete	196
+Actor	196
+Accountant	197
+Financial analyst	198
+Reporter	199
+Coach	199
+Secretary	200
+Lawyer	201
+Physicist	201
+Architect	202
+Musician	204
+Engineering technician	204
+Designer	204
+Computer hardware engineer	204
+Chemist	206
+Childcare worker	207
+Veterinarian	208
+Police officer	209
+Pilot	209
+Recreation and fitness worker	210
+Human resources assistant	212
+Social worker	212
+Pharmacist	213
+Computer software engineer	216
+Firefighter	217
+Librarian	218
+Loan officer	221
+Computer support specialist	222
+Photographer	222
+Politician	227
+Time taken: 55.203 seconds, Fetched: 51 row(s)
+
+
+G2. Top 10 Customers List
+------------------------
+select a.custno, b.firstname,b.lastname, b.age, b.profession, sum(a.amount) as amt from txnrecords a, customer b where a.custno=b.custno group by a.custno, b.firstname, b.lastname, b.age, b.profession order by amt desc limit 10;
+
+4009485	Stuart	House	58	Teacher	1973.3
+4006425	Joe	Burns	30	Economist	1732.09
+4000221	Glenda	Boswell	28	Civil engineer	1671.4700000000003
+4003228	Elsie	Newton	54	Accountant	1640.63
+4006606	Jackie	Lewis	66	Recreation and fitness worker	1628.9399999999996
+4006467	Evelyn	Monroe	37	Financial analyst	1605.9499999999998
+4004927	Joan	Lowry	30	Librarian	1576.71
+4008321	Paul	Carey	64	Human resources assistant	1560.79
+4000815	Julie	Galloway	53	Actor	1557.8200000000002
+4001051	Arlene	Higgins	62	Police officer	1488.67
+Time taken: 71.719 seconds, Fetched: 10 row(s)
+
+
+
+J.create external tables
+----------------------
+***first load the data set on hadoop
+
+$ hadoop fs -mkdir /user/training
+$ hadoop fs -put /home/hduser/custs /user/training
+
+create external table customer(custno string, firstname string, lastname string, age int,profession string)
+row format delimited
+fields terminated by ','
+stored as textfile
+
+
+select * from customer;
+
+09797	Terri	Gibbs	23	Loan officer
+4009798	Doris	Simpson	23	Architect
+4009799	Kimberly	Williford	72	Computer hardware engineer
+4009800	Keith	Casey	64	Pilot
+4009801	Valerie	Desai	66	Accountant
+4009802	Neil	Owen	44	Chemist
+4009803	Alfred	Davenport	59	Psychologist
+4009804	Bobby	Lane	38	Childcare worker
+4009805	Charles	Stephens	44	Athlete
+4009806	Tom	Fitzgerald	27	Lawyer
+4009807	Louis	Goodwin	46	Police officer
+4009808	April	Faircloth	45	Firefighter
+4009809	Crystal	Sawyer	64	Pharmacist
+4009810	Clifford	Quinn	59	Writer
+4009811	Norma	Stroud	69	Engineering technician
+4009812	Steve	Peters	63	Loan officer
+4009813	Marion	Buchanan	22	Politician
+4009814	Marion	King	70	Psychologist
+4009815	Charlene	Stout	68	Actor
+4009816	Kathryn	Reilly	35	Social worker
+4009817	Malcolm	Allred	59	Engineering technician
+4009818	Martin	Parrott	60	Statistician
+4009819	Norman	McDaniel	74	Politician
+4009820	Pauline	Allison	39	Coach
+4009821	Bob	Schroeder	68	Accountant
+4009822	Laura	Poe	28	Veterinarian
+4009823	Annette	Lyon	47	Politician
+4009824	Sharon	Howard	41	Civil engineer
+4009825	Melanie	Hampton	34	Chemist
+4009826	Lloyd	Lin	53	Teacher
+4009827	Vernon	Joyce	69	Artist
+4009828	Nancy	Powers	35	Lawyer
+4009829	Jane	Byers	54	Accountant
+4009830	Frederick	Poe	35	Carpenter
+4009831	Beth	Conner	37	Environmental scientist
+4009832	Martha	Harrison	52	Nurse
+4009833	Audrey	Hansen	35	Electrician
+4009834	Elsie	Gentry	59	Librarian
+4009835	Daniel	Terry	35	Therapist
+4009836	Helen	Bowers	48	Secretary
+4009837	Emma	McKinney	53	Statistician
+4009838	Catherine	Rodriguez	39	Electrician
+4009839	Melanie	Peacock	41	Coach
+4009840	Linda	Barrett	65	Financial analyst
+4009841	Milton	Dudley	69	Computer hardware engineer
+4009842	Randy	Fletcher	68	Economist
+4009843	Kurt	Wooten	63	Statistician
+4009844	Stephen	Blackburn	56	Accountant
+4009845	Ruby	Marsh	30	Doctor
+4009846	Vernon	Carey	67	Computer software engineer
+4009847	Philip	Forbes	37	Secretary
+4009848	Jessica	Rodriguez	44	Childcare worker
+4009849	Walter	Duncan	34	Economist
+4009850	Roberta	Crawford	40	Psychologist
+4009851	Paul	Horowitz	36	Loan officer
+4009852	Louise	Rankin	57	Therapist
+4009853	Maureen	Gray	55	Teacher
+4009854	Alison	Greenberg	35	Judge
+4009855	Sheryl	Spence	37	Judge
+4009856	Annette	Schneider	30	Real estate agent
+4009857	Edwin	Randall	71	Computer software engineer
+4009858	Kara	Shaw	39	Writer
+4009859	Teresa	Johnson	45	Musician
+4009860	Kristine	Dennis	59	Artist
+4009861	Maria	Lin	43	Economist
+4009862	Jack	Mullins	60	Automotive mechanic
+4009863	Melvin	Berman	31	Reporter
+4009864	Brett	Wolfe	45	Real estate agent
+4009865	Betsy	Denton	46	Agricultural and food scientist
+4009866	Angela	Stuart	61	
+4009867	Jacqueline	Avery	33	Pharmacist
+4009868	Victor	Odom	49	Doctor
+4009869	Gene	Conrad	74	Social worker
+4009870	Christian	Proctor	72	Designer
+4009871	John	Block	28	Politician
+4009872	Harvey	Moon	59	Architect
+4009873	Dennis	Wade	57	Recreation and fitness worker
+4009874	Debbie	Sharma	24	Pharmacist
+4009875	Fred	Thompson	73	Pharmacist
+4009876	Shirley	Odom	68	Actor
+4009877	Edgar	Stokes	60	Therapist
+4009878	Sean	Hale	71	Police officer
+4009879	Eric	O'Neill	65	Financial analyst
+4009880	Ronnie	Gill	44	Computer support specialist
+4009881	Marcus	Dickinson	69	Electrician
+4009882	Tim	Melvin	51	Musician
+4009883	Marcia	Blanchard	32	Photographer
+4009884	Becky	Hull	26	Agricultural and food scientist
+4009885	Alex	Bray	31	Pharmacist
+4009886	Laurence	Dixon	68	Actor
+4009887	Janet	Pickett	64	Chemist
+4009888	Diane	Mitchell	74	Accountant
+4009889	Gary	Mueller	60	Doctor
+4009890	Scott	Lam	74	Computer software engineer
+4009891	Geraldine	Mitchell	21	Writer
+4009892	Frank	Moore	52	Financial analyst
+4009893	Thomas	Meyer	75	Physicist
+4009894	Hannah	Chappell	41	Politician
+4009895	Bob	Frye	54	Recreation and fitness worker
+4009896	Kelly	Allen	26	Civil engineer
+4009897	Kimberly	Merritt	52	Pilot
+4009898	Becky	Martinez	28	Veterinarian
+4009899	Kimberly	Wang	23	Librarian
+4009900	Nathan	Lehman	63	Police officer
+4009901	Jenny	Wilkins	71	Musician
+4009902	Harvey	Harris	71	Computer hardware engineer
+4009903	Dolores	Houston	36	Computer hardware engineer
+4009904	Nathan	Barefoot	68	Environmental scientist
+4009905	Brian	Hwang	31	Recreation and fitness worker
+4009906	Annie	Knowles	27	Reporter
+4009907	Lauren	Dickerson	22	Real estate agent
+4009908	Fred	Coates	46	Architect
+4009909	Malcolm	Quinn	72	Farmer
+4009910	Cheryl	Livingston	68	Electrician
+4009911	Eric	Currin	69	Carpenter
+4009912	Sandra	McIntyre	52	Financial analyst
+4009913	Christina	Kidd	58	Police officer
+4009914	Yvonne	Waters	22	Financial analyst
+4009915	Albert	Wiley	27	Carpenter
+4009916	Billy	High	39	Chemist
+4009917	Anita	Grossman	54	Chemist
+4009918	Daniel	Moser	61	Computer software engineer
+4009919	Theodore	Gould	27	Judge
+4009920	Dan	House	61	Environmental scientist
+4009921	Christian	Chappell	66	Electrical engineer
+4009922	Earl	McBride	68	Lawyer
+4009923	Jessie	Buckley	30	Artist
+4009924	Jamie	Francis	44	Actor
+4009925	Terry	Curtis	67	Lawyer
+4009926	Beverly	Boyd	29	Engineering technician
+4009927	Eddie	Goodwin	30	Pilot
+4009928	Hannah	Parrott	51	Physicist
+4009929	Charlene	Bailey	71	Engineering technician
+4009930	Harriet	Rivera	65	Athlete
+4009931	Rebecca	Combs	33	Automotive mechanic
+4009932	Phillip	Sawyer	29	Teacher
+4009933	Eileen	Byrne	66	Loan officer
+4009934	Joseph	Beard	68	Architect
+4009935	Gina	Wood	43	Writer
+4009936	Vickie	Ray	74	Computer hardware engineer
+4009937	Dale	Cobb	56	Computer software engineer
+4009938	Frederick	Wagner	23	Loan officer
+4009939	Alicia	House	67	Reporter
+4009940	Amy	Boyle	58	Pharmacist
+4009941	Harry	Fletcher	55	Musician
+4009942	Marguerite	Sullivan	61	Psychologist
+4009943	Kyle	Gross	61	Coach
+4009944	Maureen	Kirkland	66	Agricultural and food scientist
+4009945	Tracy	Craft	63	Actor
+4009946	Anne	Gillespie	32	Civil engineer
+4009947	Betsy	Casey	70	Athlete
+4009948	Cameron	Ferrell	61	Recreation and fitness worker
+4009949	Lucy	Pennington	32	Photographer
+4009950	Alice	Norton	38	Pilot
+4009951	Dana	Wolfe	54	Athlete
+4009952	Jordan	Shannon	38	Economist
+4009953	Marianne	McIntosh	56	Librarian
+4009954	Sharon	Tate	44	Environmental scientist
+4009955	Natalie	Barbee	52	Economist
+4009956	Joann	Randall	29	Coach
+4009957	Thelma	Cooper	69	Secretary
+4009958	Dorothy	Shah	41	Computer software engineer
+4009959	Marshall	French	26	Dancer
+4009960	Leon	Harris	36	Human resources assistant
+4009961	Betty	Grady	73	Athlete
+4009962	Pam	Berger	42	Recreation and fitness worker
+4009963	Stanley	Kessler	36	Teacher
+4009964	Jan	Wells	56	Real estate agent
+4009965	Bob	McKinney	74	Librarian
+4009966	Marvin	Hauser	37	Actor
+4009967	Marshall	Bean	66	Physicist
+4009968	Melinda	Ivey	41	Real estate agent
+4009969	Jamie	Dodson	62	Psychologist
+4009970	Michele	Graham	69	Human resources assistant
+4009971	Patrick	Kent	69	Designer
+4009972	Herbert	Abrams	48	Computer software engineer
+4009973	Gayle	Goldberg	46	Athlete
+4009974	Eleanor	Martin	28	Actor
+4009975	Kathleen	Wilcox	33	Accountant
+4009976	Joan	Dolan	70	Secretary
+4009977	Jeffrey	Hinson	31	Musician
+4009978	Renee	Woodruff	48	Teacher
+4009979	Tim	Wade	49	Designer
+4009980	Erica	Moore	47	Artist
+4009981	Clarence	Berry	64	Pharmacist
+4009982	Rick	Carey	36	Computer software engineer
+4009983	Jordan	Tate	35	Coach
+4009984	Justin	Melvin	43	Loan officer
+4009985	Rachel	Corbett	66	Human resources assistant
+4009986	Jesse	Smith	57	Designer
+4009987	Todd	Fox	29	Politician
+4009988	Kathryn	McPherson	28	Human resources assistant
+4009989	Lori	Richards	39	Chemist
+4009990	Stacey	Rouse	21	Actor
+4009991	Paul	Mullins	47	Reporter
+4009992	Erin	Blackwell	33	Electrician
+4009993	Becky	Wolfe	67	Musician
+4009994	Clyde	Welch	40	Photographer
+4009995	Rebecca	Dennis	37	Teacher
+4009996	Tonya	McIntosh	56	Engineering technician
+4009997	Ron	Grimes	36	Computer hardware engineer
+4009998	Tracey	Bullock	60	Computer hardware engineer
+4009999	Ray	Hewitt	64	Carpenter
+Time taken: 0.124 seconds, Fetched: 9999 row(s)
+
+
+describe extended customer;
+
+describe extended customer;
+OK
+custno              	int                 	                    
+firstname           	string              	                    
+lastname            	string              	                    
+age                 	int                 	                    
+profession          	string              	                    
+	 	 
+Detailed Table Information	Table(tableName:customer, dbName:niit, owner:hduser, createTime:1536962585, lastAccessTime:0, retention:0, sd:StorageDescriptor(cols:[FieldSchema(name:custno, type:int, comment:null), FieldSchema(name:firstname, type:string, comment:null), FieldSchema(name:lastname, type:string, comment:null), FieldSchema(name:age, type:int, comment:null), FieldSchema(name:profession, type:string, comment:null)], location:hdfs://localhost:54310/user/hive/warehouse/niit.db/customer, inputFormat:org.apache.hadoop.mapred.TextInputFormat, outputFormat:org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat, compressed:false, numBuckets:-1, serdeInfo:SerDeInfo(name:null, serializationLib:org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe, parameters:{field.delim=,, serialization.format=,}), bucketCols:[], sortCols:[], parameters:{}, skewedInfo:SkewedInfo(skewedColNames:[], skewedColValues:[], skewedColValueLocationMaps:{}), storedAsSubDirectories:false), partitionKeys:[], parameters:{totalSize=391355, numRows=0, rawDataSize=0, COLUMN_STATS_ACCURATE=true, numFiles=1, transient_lastDdlTime=1536966574}, viewOriginalText:null, viewExpandedText:null, tableType:MANAGED_TABLE)	
+
+
+K 1. Inserting output in local file
+------------------------------
+INSERT OVERWRITE LOCAL DIRECTORY '/home/hduser/mindtree/custcount' row format delimited fields terminated by ',' 
+select profession, count(*) as headcount from customer group by profession order by headcount desc limit 10;
+
+OK
+Politician	227
+Computer support specialist	222
+Photographer	222
+Loan officer	221
+Librarian	218
+Firefighter	217
+Computer software engineer	216
+Pharmacist	213
+Human resources assistant	212
+Social worker	212
+Time taken: 65.701 seconds, Fetched: 10 row(s)
+
+INSERT OVERWRITE LOCAL DIRECTORY '/home/hduser/mindtree/topten' row format delimited fields terminated by ',' 
+select a.custno, b.firstname,b.lastname, b.age, b.profession, round(sum(a.amount),2) as amt from txnrecords a, customer b where a.custno=b.custno group by a.custno, b.firstname, b.lastname, b.age, b.profession order by amt desc limit 10;
+
+OK
+4009485	Stuart	House	58	Teacher	1973.3
+4006425	Joe	Burns	30	Economist	1732.09
+4000221	Glenda	Boswell	28	Civil engineer	1671.47
+4003228	Elsie	Newton	54	Accountant	1640.63
+4006606	Jackie	Lewis	66	Recreation and fitness worker	1628.94
+4006467	Evelyn	Monroe	37	Financial analyst	1605.95
+4004927	Joan	Lowry	30	Librarian	1576.71
+4008321	Paul	Carey	64	Human resources assistant	1560.79
+4000815	Julie	Galloway	53	Actor	1557.82
+4001051	Arlene	Higgins	62	Police officer	1488.67
+Time taken: 66.511 seconds, Fetched: 10 row(s)
+
+
+K 2. Inserting output in hdfs file system
+-------------------------------------------
+INSERT OVERWRITE DIRECTORY '/niit/custcount' row format delimited fields terminated by ',' 
+select profession, count(*) from customer group by profession;
+
+Coach	199
+Computer hardware engineer	204
+Computer software engineer	216
+Computer support specialist	222
+Dancer	178
+Designer	204
+Doctor	189
+Economist	189
+Electrical engineer	192
+Electrician	194
+Engineering technician	204
+Environmental scientist	176
+Farmer	196
+Financial analyst	198
+Firefighter	217
+Human resources assistant	212
+Judge	189
+Lawyer	201
+Librarian	218
+Loan officer	221
+Musician	204
+Nurse	191
+Pharmacist	213
+Photographer	222
+Physicist	201
+Pilot	209
+Police officer	209
+Politician	227
+Psychologist	194
+Real estate agent	191
+Recreation and fitness worker	210
+Reporter	199
+Secretary	200
+Social worker	212
+Statistician	196
+Teacher	189
+Therapist	187
+Veterinarian	208
+Writer	95
+Time taken: 30.899 seconds, Fetched: 51 row(s)
+
+
+
+INSERT OVERWRITE DIRECTORY '/niit/topten' row format delimited fields terminated by ',' 
+select a.custno, b.firstname,b.lastname, b.age, b.profession, sum(a.amount) as amt from txnrecords a, customer b where a.custno=b.custno group by a.custno, b.firstname, b.lastname, b.age, b.profession order by amt desc limit 10;
+
+4009485	Stuart	House	58	Teacher	1973.3
+4006425	Joe	Burns	30	Economist	1732.09
+4000221	Glenda	Boswell	28	Civil engineer	1671.4700000000003
+4003228	Elsie	Newton	54	Accountant	1640.63
+4006606	Jackie	Lewis	66	Recreation and fitness worker	1628.9399999999996
+4006467	Evelyn	Monroe	37	Financial analyst	1605.9499999999998
+4004927	Joan	Lowry	30	Librarian	1576.71
+4008321	Paul	Carey	64	Human resources assistant	1560.79
+4000815	Julie	Galloway	53	Actor	1557.8200000000002
+4001051	Arlene	Higgins	62	Police officer	1488.67
+Time taken: 62.154 seconds, Fetched: 10 row(s)
+
+
+INSERT OVERWRITE DIRECTORY '/niit/topten' row format delimited fields terminated by ',' 
+select a.custno, b.firstname,b.lastname, b.age, b.profession, sum(a.amount) as amt from txnrecords a, customer b where a.custno=b.custno group by a.custno, b.firstname, b.lastname, b.age, b.profession order by amt desc limit 10;
+
+OK
+4009485	Stuart	House	58	Teacher	1973.3
+4006425	Joe	Burns	30	Economist	1732.09
+4000221	Glenda	Boswell	28	Civil engineer	1671.4700000000003
+4003228	Elsie	Newton	54	Accountant	1640.63
+4006606	Jackie	Lewis	66	Recreation and fitness worker	1628.9399999999996
+4006467	Evelyn	Monroe	37	Financial analyst	1605.9499999999998
+4004927	Joan	Lowry	30	Librarian	1576.71
+4008321	Paul	Carey	64	Human resources assistant	1560.79
+4000815	Julie	Galloway	53	Actor	1557.8200000000002
+4001051	Arlene	Higgins	62	Police officer	1488.67
+Time taken: 71.626 seconds, Fetched: 10 row(s)
+
+
+
+Q. inserting output into another table ( make sure results table is created beforehand)
+---------------------------------------------------------------------------------------
+create table Airsports(txnno INT, txndate STRING, custno INT, amount DOUBLE, 
+category STRING, product STRING, city STRING, state STRING, spendby STRING)
+row format delimited
+fields terminated by ','
+stored as textfile;
+
+insert overwrite table Airsports select * from txnrecords where category = 'Air Sports';
+
+R1. find sales done in each payment mode and their percentage
+--------------------------------------------------------------
+create table totalsales (total bigint)
+row format delimited                                                                                  
+fields terminated by ',';   
+
+insert overwrite table totalsales                                                                           
+select sum(amount) from txnrecords;
+
+select a.spendby, round(sum(a.amount),2) as typesales, round((sum(a.amount)/total*100),2) as salespercent from txnrecords a, totalsales b group by a.spendby, b.total ;
+
+OK
+cash	187685.61	3.67
+credit	4923134.93	96.33
+
+
+R2.find sales based on age group
+--------------------------------
+
+create table out1 (custno int,firstname string,age int,profession string,amount double,product string)
+row format delimited                                                                                  
+fields terminated by ',';   
+
+
+insert overwrite table out1                                                                           
+select a.custno,a.firstname,a.age,a.profession,b.amount,b.product                                     
+from customer a JOIN txnrecords b ON a.custno = b.custno;     
+
+select * from out1 limit 100;
+
+4000539	Hugh	71	Firefighter	100.93	Beach Volleyball	old
+4009719	Greg	71	Musician	129.26	Downhill Skiing	old
+4008455	Laura	59	Computer hardware engineer	105.24	Weightlifting Machine Accessories	old
+4005887	Neil	45	Physicist	66.06	Riding Scooters	middle
+4006293	Nicholas	63	Teacher	89.14	Tetherball	old
+4002526	Bob	40		159.14	Poker Chips & Sets	middle
+4006736	Tamara	23	Loan officer	171.57	Ballet Bars	low
+4005403	Ruby	48	Veterinarian	89.91	Softball	middle
+4006291	Ruby	57	Police officer	32.28	Skating	old
+4009360	Raymond	39	Doctor	152.21	Cricket	middle
+4001305	Andrea	56	Psychologist	150.82	Skateboarding	old
+4008653	Toni	39	Athlete	133.2	Riding Scooters	middle
+4002106	Lester	50	Coach	148.31	Portable Electronic Games	old
+4006262	Denise	33	Financial analyst	125.28	Wrestling	middle
+4003860	Pamela	71	Veterinarian	170.05	Trampolines	old
+4000458	Harold	40	Musician	74.06	Jigsaw Puzzles	middle
+4002200	Sandy	33	Financial analyst	175.24	Baseball	middle
+4005751	Paige	29	Nurse	39.8	Springboards	low
+4005625	Herman	30	Architect	174.82	Ice Climbing	middle
+4003500	Dana	51	Artist	188.9	Swimming	old
+4001098	Curtis	50	Loan officer	21.23	Gymnastics Rings	old
+4007259	Aaron	38	Engineering technician	22.42	Rock Climbing	middle
+4000293	Kay	44	Childcare worker	49.97	Stopwatches	middle
+4008024	Derek	66	Automotive mechanic	31.84	Swimming	old
+4008884	Warren	74	Politician	80.99	Tetherball	old
+4001050	Barbara	73	Actor	89.56	Gymnastics Mats	old
+4003309	Jacob	35	Reporter	55.35	Towed Water Sports	middle
+4001561	Arlene	51		184.56	Cheerleading	old
+4009270	Christy	71	Loan officer	176.34	Parachutes	old
+4002697	Joan	74	Librarian	35.75	Running	old
+4008469	William	62	Designer	42.51	Team Handball	old
+4006425	Joe	30	Economist	193.11	Sledding	middle
+4005513	Valerie	62	Dancer	68.86	Jumping Stilts	old
+4004611	Wendy	27	Architect	146.36	Whitewater Rafting	low
+4005227	Diane	57	Firefighter	130.52	Medicine Balls	old
+4002299	Alison	56	Electrician	197.54	Exercise Balls	old
+4002707	Dana	28	Loan officer	5.95	Dominoes	low
+4006562	Valerie	44	Computer software engineer	37.29	Lawn Water Slides	middle
+
+
+create table out2 (custno int,firstname string,age int,profession string,amount double,product string, level string)
+row format delimited                                                                                  
+fields terminated by ',';   
+
+insert overwrite table out2
+select * , case when age<30 then 'low' when age>=30 and age < 50 then 'middle' when age>=50 then 'old' 
+else 'others' end
+from out1;
+
+
+select * from out2 limit 100; 
+
+4004874	Danielle	48	Reporter	118.18	Cardio Machine Accessories	middle
+4009680	Ted	38	Electrician	41.14	Weightlifting Machine Accessories	middle
+4000539	Hugh	71	Firefighter	100.93	Beach Volleyball	old
+4009719	Greg	71	Musician	129.26	Downhill Skiing	old
+4008455	Laura	59	Computer hardware engineer	105.24	Weightlifting Machine Accessories	old
+4005887	Neil	45	Physicist	66.06	Riding Scooters	middle
+4006293	Nicholas	63	Teacher	89.14	Tetherball	old
+4002526	Bob	40		159.14	Poker Chips & Sets	middle
+4006736	Tamara	23	Loan officer	171.57	Ballet Bars	low
+4005403	Ruby	48	Veterinarian	89.91	Softball	middle
+4006291	Ruby	57	Police officer	32.28	Skating	old
+4009360	Raymond	39	Doctor	152.21	Cricket	middle
+4001305	Andrea	56	Psychologist	150.82	Skateboarding	old
+4008653	Toni	39	Athlete	133.2	Riding Scooters	middle
+4002106	Lester	50	Coach	148.31	Portable Electronic Games	old
+4006262	Denise	33	Financial analyst	125.28	Wrestling	middle
+4003860	Pamela	71	Veterinarian	170.05	Trampolines	old
+4000458	Harold	40	Musician	74.06	Jigsaw Puzzles	middle
+4002200	Sandy	33	Financial analyst	175.24	Baseball	middle
+4005751	Paige	29	Nurse	39.8	Springboards	low
+4005625	Herman	30	Architect	174.82	Ice Climbing	middle
+4003500	Dana	51	Artist	188.9	Swimming	old
+4001098	Curtis	50	Loan officer	21.23	Gymnastics Rings	old
+4007259	Aaron	38	Engineering technician	22.42	Rock Climbing	middle
+4000293	Kay	44	Childcare worker	49.97	Stopwatches	middle
+4008024	Derek	66	Automotive mechanic	31.84	Swimming	old
+4008884	Warren	74	Politician	80.99	Tetherball	old
+4001050	Barbara	73	Actor	89.56	Gymnastics Mats	old
+4003309	Jacob	35	Reporter	55.35	Towed Water Sports	middle
+4001561	Arlene	51		184.56	Cheerleading	old
+4009270	Christy	71	Loan officer	176.34	Parachutes	old
+4002697	Joan	74	Librarian	35.75	Running	old
+4008469	William	62	Designer	42.51	Team Handball	old
+4006425	Joe	30	Economist	193.11	Sledding	middle
+4005513	Valerie	62	Dancer	68.86	Jumping Stilts	old
+4004611	Wendy	27	Architect	146.36	Whitewater Rafting	low
+4005227	Diane	57	Firefighter	130.52	Medicine Balls	old
+4002299	Alison	56	Electrician	197.54	Exercise Balls	old
+4002707	Dana	28	Loan officer	5.95	Dominoes	low
+4006562	Valerie	44	Computer software engineer	37.29	Lawn Water Slides	middle
+
+
+describe out2;  
+
+create table out3 (level string, amount double, salespercent double)                      
+row format delimited
+fields terminated by ',';
+
+insert overwrite table out3  
+select a.level, round(sum(a.amount),2) as totalspent, round((sum(a.amount)/total*100),2) as salespercent  from out2 a, totalsales b group by a.level, b.total;
+
+
+select * from out3;
+
+OK
+low	725221.34	14.19
+middle	1855861.67	36.31
+old	2529100.31	49.49
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

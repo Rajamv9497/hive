@@ -1,0 +1,63 @@
+S.create an index on customer (earlier created) table on profession column
+--------------------------------------------------------------------------
+use retail;
+
+*** deferred rebuild will create an empty index
+create index prof_index on table customer(profession) as 'compact' with deferred rebuild;
+
+**** alter index will actually create the index
+alter index prof_index on customer rebuild;
+
+******list all the indexes on the table
+show indexes on customer;
+
+*****schema of the index
+describe niit__customer_prof_index__;
+
+select * from retail__customer_prof_index__ where profession = "Pilot;
+
+****Time taken without index
+-----------------------------
+select profession, count(*) from customer group by profession;
+Time taken : 31.872 seconds
+
+Actor    196
+Time taken: 27.003 seconds, Fetched: 1 row(s)
+
+
+================================================================
+
+P 1.Create a view in hive for customers whose age is more than 45 years
+-----------------------------------------------------------------------
+CREATE VIEW age_45plus AS
+SELECT * FROM customer
+WHERE age>45;
+ 
+select * from age_45plus;
+ 
+5354 records
+ 
+--create a file custs1 on local file system
+5000000,Mike,Smith,46,Pilot
+ 
+---place the above file under customer folder on hdfs
+ 
+hadoop fs -put custs1 /user/hive/warehouse/retail.db/customer
+ 
+select * from age_45plus;
+ 
+5355 records  
+ 
+P 2.Create a view in hive for top 10 customers  
+----------------------------------------------
+CREATE VIEW topten AS
+select a.custno, b.firstname,b.lastname, b.age, b.profession, round(sum(a.amount),2) as amt from txnrecords a, customer b where a.custno=b.custno group by a.custno, b.firstname, b.lastname, b.age, b.profession order by amt desc limit 10;
+ 
+select * from topten;
+
+
+
+
+
+
+
